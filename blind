@@ -12,7 +12,7 @@
 #
 # Released under the MIT License
 
-import os,sys,json,socket,random,datetime,binascii
+import os,re,sys,json,socket,datetime,binascii
 
 from Crypto.Cipher import AES
 
@@ -51,12 +51,8 @@ def DEBUG(pld,rpy):
    print (f"{colour.yellow}REPLY{colour.green}")
    print (rpy)
 
-# msgID is date/time and three random characters
-# this is done to ensure the next msgID is different from this
-# and the hub doesn't think it's the same packet
-t=datetime.datetime.now()
-dt=t.strftime('%Y')+t.strftime('%m')+t.strftime('%d')+t.strftime('%H')+t.strftime('%M')+t.strftime('%S')
-id=dt+str(random.randint(100,159))
+# msgID is date/time
+id=''.join(re.findall(r'\d+',str(datetime.datetime.now())))
 payload=str.encode('{"msgType":"GetDeviceList","msgID":"'+id+'"}')
 
 # Send the payload to the hub, and get the reply
@@ -94,7 +90,8 @@ bln=sys.argv[1]
 command=sys.argv[2]
 operation=command
 data='targetPosition'
-id=dt+str(random.randint(200,259))
+id=''.join(re.findall(r'\d+',str(datetime.datetime.now())))
+
 # These are the commands we use to control the blinds
 cmds=['close','down','open','up','stop','halt','status','query','shuffle']
 ops=['0','0','1','1','2','2','5','5','9']
