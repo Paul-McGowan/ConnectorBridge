@@ -22,7 +22,7 @@ The hub knows them as 'mac address'+0001...0099 it doesn't use friendly names.
 
 Run the script like this...
 
-blind [name/all] [up/down/open/close/query/status/percentage]
+blind [name/all] [up/down/open/close/query/status/shuffle/0-100]
 
 Running the script with no parameters displays the usage instructions and
 data from the hub.
@@ -36,4 +36,8 @@ blind patio query
 To open the patio blind
 blind patio open
 
+Shuffle picks a random percentage rounded to nearest 5% and is useful to stop blinds getting creased.
+
 The script returns the postition of the blind and its battery status.
+
+Renaming the script as 'dev' will run as normal, but will display lots of debuging data.
