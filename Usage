@@ -1,4 +1,4 @@
-This script allows you control blinds that have programmed into a Dooya Hub.
+This script allows you control blinds that are programmed into a Dooya Hub.
 
 The only piece of data needed is the key generated the 'controller' app.
 
@@ -11,8 +11,6 @@ Go to the HELP and ABOUT page.
 Now tap this page 5 times and a popup window appears.
 Make a note of this string, it's your 'key'.
 Close the app and exit.
-There may be a way to get this directly from the hub, but it's not documented in the API.
-(See Update)
 
 Step 2. Edit the 'blind' script
 Add the 'key' provided by the controller app
