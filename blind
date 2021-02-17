@@ -132,8 +132,10 @@ if data!='operation':
       sys.exit(f'{colour.red}Blind movement must be numeric and between 0 and 100')
 
 # Shuffle picks a random number to open the blind.
-# Useful if we don't use the blinds ofter to stop a crease forming
-# Set the number between 0 and 100
+# Useful if we don't use the blinds often to stop a crease forming
+# Set the randint between 0 and 100
+# Mine is set to 55 max as I have furniture under the patio window
+# that needs moving before closing the blind fully
 if command=='shuffle':
    data='targetPosition'
    operation=str(5*round(int(random.randint(0,55))/5))
