@@ -1,119 +1,170 @@
 #!/usr/bin/python3
-
-# Simple program to control blinds programmed into a Dooya Hub
 #
-# MIT License
+# This script controls blinds programmed into a Dooya hub
+#
+# Renaming the scipt 'dev' will print debug information as the script runs
+# to help you see what's happening.
+#
+# Running the script with no parameters will return the number of blinds
+# and show the token from the hub, and the generated AccessToken
 #
 # Paul McGowan 2021
+#
+# Released under the MIT License
 
-import os, sys, json, socket, random, datetime, binascii
+import os,sys,json,socket,random,datetime,binascii
 
 from Crypto.Cipher import AES
 
-# Add the key from the 'connector' app here and edit the blind names
-# no firther changes are needed to the file
-key = 'xxxxxxxx-xxxx-xx'
-blinds = ["blind1","blind2","blind3","blind4","blind5"]
+# Enter the KEY retrieved from the 'connector' app here together with
+# the names of the blinds you want to control
+# No further editing in needed
+key='XXXXXXXX-XXXX-XX'
+blinds=['patio','bedroom','study','kitchen']
 
-# Function to send the data to the hub and return JSON formatted data
+# Define colours
+class colour:
+    purple='\033[95m'
+    green='\033[92m'
+    yellow='\033[93m'
+    red='\033[91m'
+
+# Create the UDP socket and send the payload
+# Timeout is set to one second and will stop if no reply received
+# This returns the JSON formatted data from the hub
 def UDP(cmd):
    try:
-      UDPsend = socket.socket(family=socket.AF_INET,type=socket.SOCK_DGRAM)
+      UDPsend=socket.socket(family=socket.AF_INET,type=socket.SOCK_DGRAM)
       UDPsend.settimeout(1)
-      UDPsend.sendto(cmd,("238.0.0.18",32100))
-      data = json.loads(format(UDPsend.recvfrom(1024)[0].decode("utf-8")))
-   except socket.timeout:
-      sys.exit("Hub is not responding")
-   finally:
+      UDPsend.sendto(cmd,('238.0.0.18',32100))
+      reply=json.loads(format(UDPsend.recvfrom(1024)[0].decode('utf-8')))
       UDPsend.close()
-   return(data)
+   except socket.timeout:
+      UDPsend.close()
+      sys.exit(f'{colour.red}Hub is not responding')
+   return(reply)
 
-# Build the message ID from date/time and 3 random characters
-t = datetime.datetime.now()
-dt = t.strftime("%Y")+t.strftime("%m")+t.strftime("%d")+t.strftime("%H")+t.strftime("%M")+t.strftime("%S")
-id = dt + str(random.randint(100,159))
-# Build the payload to send to the hub
-payload = str.encode('{"msgType":"GetDeviceList","msgID":"'+id+'"}')
+# This displays the payload sent to the hub and the JSON reply
+def DEBUG(pld,rpy):
+   print (f"{colour.yellow}PAYLOAD{colour.green}")
+   print (pld)
+   print (f"{colour.yellow}REPLY{colour.green}")
+   print (rpy)
 
-# Send the data to the hub
-data = UDP(payload)
+# msgID is date/time and three random characters
+# this is done to ensure the next msgID is different from this
+# and the hub doesn't think it's the same packet
+t=datetime.datetime.now()
+dt=t.strftime('%Y')+t.strftime('%m')+t.strftime('%d')+t.strftime('%H')+t.strftime('%M')+t.strftime('%S')
+id=dt+str(random.randint(100,159))
+payload=str.encode('{"msgType":"GetDeviceList","msgID":"'+id+'"}')
 
-# Extract the MAC address, and calculate the AccessToken
-mac = str(data["mac"])
-token = (binascii.hexlify(AES.new(key,AES.MODE_ECB).encrypt(str(data["token"]))).upper()).decode()
+# Send the payload to the hub, and get the reply
+reply=UDP(payload)
 
-# If we didn't enter enough commands display usage and hub data
-# This is useful to check the hub is working
-if len(sys.argv) != 3:
-   print (os.path.basename(__file__)+" [name/all] [open/close/up/down/stop/halt/query/status/0-100]")
-   print ("Firmware version "+str(data["fwVersion"]))
-   print ("MAC address "+mac)
-   print ("Key "+key)
-   print ("Token "+str(data["token"]))
-   sys.exit("Access Token "+token)
+# If the script is named 'dev' print debug information
+if os.path.basename(__file__)=="dev":
+   DEBUG(payload,reply)
 
-blind = "9999"
-bln = sys.argv[1]
-command = sys.argv[2]
-operation = command
-data = "targetPosition"
-# Change the ID string so the hub sees a different ID and expects a new command
-id = dt + str(random.randint(200,259))
-# These are commands we enter, together with the codes the hub understands
-cmds = ["close","down","open","up","stop","halt","status","query"]
-ops = ["0","0","1","1","2","2","5","5"]
-# Now find the blind number and get the command
-c = 0
-for x in cmds:
-   if command == x:
-      operation = ops[c]
-      data = "operation"
-   c += 1
-c = 0
-for x in blinds:
-   c += 1
-   if bln == x:
-      blind = "000" + str(c)
+# Get the MAC address of the hub & blinds and calculate the AccessToken
+mac=str(reply['mac'])
+token=(binascii.hexlify(AES.new(key,AES.MODE_ECB).encrypt(str(reply['token']))).upper()).decode()
 
-# Check we have entered valid information
-if bln == "all":
-   blind = "0000"
-
-if blind == "9999":
-   sys.exit("Unknown blind name "+bln)
-
-if blind == "0000" and operation == "5":
-   sys.exit("You must query individual blinds for status")
-
-if data != "operation":
-   if command.isdigit() == True:
-      pct = int(command)
-      if pct < 0 or pct > 100:
-         sys.exit("Blind movement must be between 0 and 100")
+# If we don't enter enough parameters, display usage info and
+# retrieved data from the hub
+if len(sys.argv)!=3:
+   print (f'{colour.purple}'+os.path.basename(__file__)+' [name/all] [open/close/up/down/stop/halt/query/status/shuffle/0-100]')
+   if len(blinds)!=int(len(reply['data']))-1:
+      print (f'{colour.red}Warning - Blinds in script  '+str(len(blinds)))
+      print ('Warning - Programmed Blinds '+str(len(blinds)-1)+f'{colour.purple}')
    else:
-      sys.exit("Blind movement must be numeric and between 0 and 100")
+      print ('Controlled blinds '+str(int(len(reply['data']))-1))
+   print ('Firmware version '+str(reply['fwVersion']))
+   print ('MAC address '+mac)
+   print ('Key '+key)
+   print ('Token '+str(reply['token']))
+   sys.exit('Access Token '+token)
 
-# Build the payload string to send the hub
-payload = str.encode('{"msgType":"WriteDevice","mac":"'+mac+''+blind+'","DeviceType":"10000000","AccessToken":"'+token+'","msgID":"'+id+'","data":{"'+data+'":'+operation+'}}')
+# Calculate blind numbers and commands
+# Blinds are numbered starting at 0001 for the first blind programmed
+# The 3 digit random number is a different range to ensure the msgID
+# is different from the last one
+blind='9999'
+bln=sys.argv[1]
+command=sys.argv[2]
+operation=command
+data='targetPosition'
+id=dt+str(random.randint(200,259))
+# These are the commands we use to control the blinds
+cmds=['close','down','open','up','stop','halt','status','query','shuffle']
+ops=['0','0','1','1','2','2','5','5','9']
+c=0
+for x in cmds:
+   if command==x:
+      operation=ops[c]
+      data='operation'
+   c+=1
+c=0
+for x in blinds:
+   c+=1
+   if bln==x:
+      blind='000'+str(c)
 
-# Send the data
-data = UDP(payload)
+if bln=='all':
+   blind='0000'
 
-# An actionResult normally occurs if there is an issue with the Access Key
-# Check the key is entered correctly at the beginning of the file
-if "actionResult" in data:
-   sys.exit(data["actionResult"])
+# If blind is 9999 then we couldn't find the blind name is our list
+if blind=='9999':
+   sys.exit(f'{colour.red}Unknown blind name '+bln)
 
-# Print confirmation data
-print ("Battery "+str(int(100*float(data["data"]["batteryLevel"])/1200))+"%")
-print ("Blind position "+str(data["data"]["currentPosition"])+"%")
-if command == "stop" or command == "halt":
-   sys.exit("Blind movement halted")
-if command == "query":
-   command = "status"
-if command != "status":
-   if command == "open" or command == "up":
-      command = "0"
-   if command == "close" or command == "down":
-      command = "100"
-   print ("New position "+command+"%")
+# Status can only be used for individual blinds
+if blind=='0000' and operation=='5':
+   sys.exit(f'{colour.red}You must query individual blinds for status')
+
+# if the command isn't in the list it must be a percentage to open the blind
+# check it's between 0-100 and numeric
+if data!='operation':
+   if command.isdigit()==True:
+      pct=int(command)
+      if pct<0 or pct>100:
+         sys.exit(f'{colour.red}Blind movement must be between 0 and 100')
+   else:
+      sys.exit(f'{colour.red}Blind movement must be numeric and between 0 and 100')
+
+# Shuffle picks a random number to open the blind.
+# Useful if we don't use the blinds ofter to stop a crease forming
+# Set the number between 0 and 100
+if command=='shuffle':
+   data='targetPosition'
+   operation=str(5*round(int(random.randint(0,55))/5))
+   command=operation
+
+# Build the payload from the data
+payload=str.encode('{"msgType":"WriteDevice","mac":"'+mac+''+blind+'","DeviceType":"10000000","AccessToken":"'+token+'","msgID":"'+id+'","data":{"'+data+'":'+operation+'}}')
+
+# Send the payload to the hub and get the reply
+reply=UDP(payload)
+
+# If script name is 'dev' display payload and reply
+if os.path.basename(__file__)=="dev":
+   DEBUG(payload,reply)
+
+# If we have an 'actionResult' key, it usually means the key entered at
+# the start of the file is wrong
+if 'actionResult' in reply:
+   sys.exit(f'{colour.red}'+reply['actionResult'])
+
+# Print the formatted result data
+print (f'{colour.purple}Battery '+str(int(100*float(reply['data']['batteryLevel'])/1200))+'%')
+print ('Blind position '+str(reply['data']['currentPosition'])+'%')
+if command=='stop' or command=='halt':
+   sys.exit('Blind movement halted')
+if command=='query':
+   command='status'
+if command!='status':
+   if command=='open' or command=='up':
+      command='0'
+   if command=='close' or command=='down':
+      command='100'
+   print ('New position '+command+'%')
+
