@@ -90,7 +90,6 @@ bln=sys.argv[1]
 command=sys.argv[2]
 operation=command
 data='targetPosition'
-id=''.join(re.findall(r'\d+',str(datetime.datetime.now())))
 
 # These are the commands we use to control the blinds
 cmds=['close','down','open','up','stop','halt','status','query','shuffle']
@@ -139,6 +138,7 @@ if command=='shuffle':
    command=operation
 
 # Build the payload from the data
+id=''.join(re.findall(r'\d+',str(datetime.datetime.now())))
 payload=str.encode('{"msgType":"WriteDevice","mac":"'+mac+''+blind+'","DeviceType":"10000000","AccessToken":"'+token+'","msgID":"'+id+'","data":{"'+data+'":'+operation+'}}')
 
 # Send the payload to the hub and get the reply
