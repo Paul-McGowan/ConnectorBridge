@@ -59,7 +59,7 @@ payload=str.encode('{"msgType":"GetDeviceList","msgID":"'+id+'"}')
 reply=UDP(payload)
 
 # If the script is named 'dev' print debug information
-if os.path.basename(__file__)=="dev":
+if os.path.basename(__file__)=='dev':
    DEBUG(payload,reply)
 
 # Get the MAC address of the hub & blinds and calculate the AccessToken
@@ -145,7 +145,7 @@ payload=str.encode('{"msgType":"WriteDevice","mac":"'+mac+''+blind+'","DeviceTyp
 reply=UDP(payload)
 
 # If script name is 'dev' display payload and reply
-if os.path.basename(__file__)=="dev":
+if os.path.basename(__file__)=='dev':
    DEBUG(payload,reply)
 
 # If we have an 'actionResult' key, it usually means the key entered at
