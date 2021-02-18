@@ -47,9 +47,9 @@ def UDP(cmd):
 # This displays the payload sent to the hub and the JSON reply
 def DEBUG(pld,rpy):
    print (f"{colour.yellow}PAYLOAD{colour.green}")
-   print (pld)
+   print (json.dumps(json.loads(pld),indent=3))
    print (f"{colour.yellow}REPLY{colour.green}")
-   print (rpy)
+   print (json.dumps(rpy,indent=3))
 
 # msgID is date/time
 id=''.join(re.findall(r'\d+',str(datetime.datetime.now())))
