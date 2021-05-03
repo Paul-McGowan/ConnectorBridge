@@ -104,7 +104,7 @@ c=0
 for x in blinds:
    c+=1
    if bln==x:
-      blind='000'+str(c)
+      blind='000'+format(c, 'x')
 
 if bln=='all':
    blind='0000'
