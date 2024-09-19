@@ -64,7 +64,7 @@ if os.path.basename(__file__)=='dev':
 
 # Get the MAC address of the hub & blinds and calculate the AccessToken
 mac=str(reply['mac'])
-token=(binascii.hexlify(AES.new(key,AES.MODE_ECB).encrypt(str(reply['token']))).upper()).decode()
+token=(binascii.hexlify(AES.new(key.encode("utf8"),AES.MODE_ECB).encrypt(str(reply['token']).encode("utf8"))).upper()).decode("utf8")
 
 # If we don't enter enough parameters, display usage info and
 # retrieved data from the hub
